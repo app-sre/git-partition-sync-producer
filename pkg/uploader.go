@@ -30,8 +30,7 @@ type Uploader struct {
 	cache        map[string]string
 }
 
-func NewUploader(rawCfg []byte,
-	glToken, glURL, awsAccessKey, awsSecretKey, awsRegion, bucket string) (*Uploader, error) {
+func NewUploader(rawCfg []byte, glToken, glURL, awsAccessKey, awsSecretKey, awsRegion, bucket string) (*Uploader, error) {
 
 	var cfg []*Sync
 	err := yaml.Unmarshal(rawCfg, &cfg)
@@ -63,6 +62,7 @@ func (u *Uploader) Run() error {
 	if err != nil {
 		return err
 	}
+
 	fmt.Println(latestCommits)
 	/*
 		awsS3 := s3.New(s3.Options{
@@ -83,32 +83,17 @@ func (u *Uploader) Run() error {
 func (u *Uploader) getLatestCommits(gl *gitlab.Client) (map[string]string, error) {
 	latestCommits := make(map[string]string)
 	for _, sync := range u.syncs {
+		pid := fmt.Sprintf("%s/%s", sync.Source.Namespace, sync.Source.ProjectName)
 		// by default, the latest commit is returned
-		commit, _, err := gl.Commits.GetCommit(
-			fmt.Sprintf("%s/%s", sync.Source.Namespace, sync.Source.ProjectName),
-			sync.Source.Branch,
-			nil,
-		)
+		commit, _, err := gl.Commits.GetCommit(pid, sync.Source.Branch, nil)
 		if err != nil {
 			return nil, err
 		}
-		projectURL := fmt.Sprintf("%s/%s/%s",
-			u.glBaseURL,
-			sync.Source.Namespace,
-			sync.Source.ProjectName,
-		)
-		latestCommits[projectURL] = commit.ID
+		latestCommits[pid] = commit.ID
 	}
 	return latestCommits, nil
 }
 
-/*
-func (u *Uploader) retrieveOutdated() {
-	for _, sync := range u.syncs {
-		sha, exists := u.cache[sync.Source.URL]
-		//if !exists || sha !=
-
-		//}
-	}
-}
-*/
+// NEXT: implement function to list keys within s3 bucket
+// base64 decode and compare commit shas from keys against result of getLatestCommits()
+// return slice of outdated PIDs that need to be cloned/uploaded
