@@ -5,10 +5,12 @@ Yaml file is an array of objects with following format:
 
 ```
 source: 
-  url
+  project_name
+  namespace
   branch
 destination:
-  url
+  project_name
+  namespace
   branch
 ```
 ## Environment Variables
