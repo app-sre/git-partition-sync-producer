@@ -27,7 +27,6 @@ type Uploader struct {
 	awsRegion    string
 	bucket       string
 	syncs        []*Sync
-	cache        map[string]string
 }
 
 func NewUploader(rawCfg []byte, glToken, glURL, awsAccessKey, awsSecretKey, awsRegion, bucket string) (*Uploader, error) {
@@ -45,7 +44,6 @@ func NewUploader(rawCfg []byte, glToken, glURL, awsAccessKey, awsSecretKey, awsR
 		awsSecretKey: awsSecretKey,
 		awsRegion:    awsRegion,
 		syncs:        cfg,
-		cache:        make(map[string]string),
 	}, nil
 }
 
