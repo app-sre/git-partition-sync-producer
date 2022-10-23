@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -55,8 +56,9 @@ func main() {
 		log.Fatalln(err)
 	}
 
+	ctx := context.Background()
 	for {
-		err = uploader.Run()
+		err = uploader.Run(ctx)
 		if err != nil {
 			log.Println(err)
 		}
