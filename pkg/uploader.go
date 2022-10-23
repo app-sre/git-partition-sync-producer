@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/credentials"
@@ -72,20 +73,34 @@ func NewUploader(rawCfg []byte, glToken, glURL, awsAccessKey, awsSecretKey, awsR
 func (u *Uploader) Run(ctx context.Context) error {
 	log.Println("Starting run...")
 
-	latestCommits, err := u.getLatestCommits()
+	glCommits, err := u.getLatestGitlabCommits()
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(latestCommits)
+	ctxTimeout, cancel := context.WithTimeout(ctx, time.Second*5)
+	defer cancel()
+	s3Commits, err := u.getS3Keys(ctxTimeout)
+	if err != nil {
+		return err
+	}
 
-	u.getOutdated(ctx)
+	outdated, err := u.getOutdated(glCommits, s3Commits)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(outdated)
 	return nil
 }
 
+// keys are gitlab PID (gitlab_group/project_name)
+// values are commit SHA
+type PidToCommit map[string]string
+
 // returns a map of project PIDs (gitlab_group/project_name) to latest commit on specified source branch
-func (u *Uploader) getLatestCommits() (map[string]string, error) {
-	latestCommits := make(map[string]string)
+func (u *Uploader) getLatestGitlabCommits() (PidToCommit, error) {
+	latestCommits := make(PidToCommit)
 	for _, sync := range u.syncs {
 		pid := fmt.Sprintf("%s/%s", sync.Source.Group, sync.Source.ProjectName)
 		// by default, the latest commit is returned
@@ -98,25 +113,6 @@ func (u *Uploader) getLatestCommits() (map[string]string, error) {
 	return latestCommits, nil
 }
 
-// NEXT: implement function to list keys within s3 bucket
-// base64 decode and compare commit shas from keys against result of getLatestCommits()
-// return slice of outdated PIDs that need to be cloned/uploaded
-func (u *Uploader) getOutdated(ctx context.Context) ([]string, error) {
-	res, err := u.s3Client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
-		Bucket: &u.bucket,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	keys, err := processRawKeys(res)
-	if err != nil {
-		return nil, err
-	}
-	fmt.Println(keys)
-	return nil, nil
-}
-
 type DecodedKey struct {
 	Group       string `json:"group"`
 	ProjectName string `json:"project_name"`
@@ -124,12 +120,19 @@ type DecodedKey struct {
 	Branch      string `json:"branch"`
 }
 
-// processRawKeys processes response of ListObjectsV2 against aws api
+// getS3Keys processes response of ListObjectsV2 against aws api
 // return is decoded/marshalled list of keys
 // Context: within s3, our uploaded object keys are based64 encoded jsons
-func processRawKeys(raw *s3.ListObjectsV2Output) ([]DecodedKey, error) {
-	keys := []DecodedKey{}
-	for _, obj := range raw.Contents {
+func (u *Uploader) getS3Keys(ctx context.Context) (PidToCommit, error) {
+	res, err := u.s3Client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
+		Bucket: &u.bucket,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	s3PidCommits := make(PidToCommit)
+	for _, obj := range res.Contents {
 		// remove file extension before attempting decode
 		// extension is .tar.gpg, split at first occurrence of .
 		encodedKey := strings.SplitN(*obj.Key, ".", 2)[0]
@@ -142,7 +145,38 @@ func processRawKeys(raw *s3.ListObjectsV2Output) ([]DecodedKey, error) {
 		if err != nil {
 			return nil, err
 		}
-		keys = append(keys, jsonKey)
+		pid := fmt.Sprintf("%s/%s", jsonKey.Group, jsonKey.ProjectName)
+		s3PidCommits[pid] = jsonKey.CommitSHA
 	}
-	return keys, nil
+	return s3PidCommits, nil
+}
+
+// getOutdated iterates through desired Syncs (defined within config file)
+// and compares existing latest commits on source GitLab projects against
+// commits stored within s3 keys for corresponding destination GitLab projects
+// return is Syncs that do not exist within s3Commits OR s3Commit != glCommit
+func (u *Uploader) getOutdated(glCommits, s3Commits map[string]string) ([]*Sync, error) {
+	outdated := []*Sync{}
+	for _, sync := range u.syncs {
+		sourcePid := fmt.Sprintf("%s/%s", sync.Source.Group, sync.Source.ProjectName)
+		destinationPid := fmt.Sprintf("%s/%s", sync.Destination.Group, sync.Destination.ProjectName)
+		s3Commit, exist := s3Commits[destinationPid]
+		if !exist || s3Commit != glCommits[sourcePid] {
+			outdated = append(outdated, sync)
+		}
+
+		// remove keys from s3 map while processing
+		// if map is not empty at end, there are s3 keys that should be deleted
+		// i.e removed from config yaml as targets
+		if exist {
+			delete(s3Commits, destinationPid)
+		}
+	}
+
+	if len(s3Commits) > 0 {
+		// call clean up function
+		// (delete s3 objects)
+	}
+
+	return outdated, nil
 }
