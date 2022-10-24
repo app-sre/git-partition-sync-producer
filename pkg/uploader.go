@@ -112,10 +112,12 @@ func (u *Uploader) Run(ctx context.Context, dryRun bool) error {
 		return nil
 	}
 
-	err = u.cloneRepositories(toUpdate)
+	err = u.cloneRepos(toUpdate)
 	if err != nil {
 		return err
 	}
+
+	err = u.tarRepos(toUpdate)
 
 	// if updating was successful
 	// err = u.removeOutdated(ctx, toDelete)
