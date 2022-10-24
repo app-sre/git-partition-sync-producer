@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os/exec"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/credentials"
@@ -22,20 +23,32 @@ type GitTarget struct {
 type GitSync struct {
 	Source      GitTarget `yaml:"source"`
 	Destination GitTarget `yaml:"destination"`
+	repoPath    string
+	tarPath     string
+	gpgPath     string
 }
 
 type Uploader struct {
-	syncs     []*GitSync
-	glClient  *gitlab.Client
-	glBaseURL string
-	s3Client  *s3.Client
-	awsRegion string
-	bucket    string
+	syncs      []*GitSync
+	glClient   *gitlab.Client
+	glBaseURL  string
+	glUsername string
+	glToken    string
+	s3Client   *s3.Client
+	awsRegion  string
+	bucket     string
+	workdir    string
 }
 
-func NewUploader(rawCfg []byte, glToken, glURL, awsAccessKey, awsSecretKey, awsRegion, bucket string) (*Uploader, error) {
+func NewUploader(rawCfg []byte, glURL, glUsername, glToken, awsAccessKey, awsSecretKey, awsRegion, bucket, workdir string) (*Uploader, error) {
 	var cfg []*GitSync
 	err := yaml.Unmarshal(rawCfg, &cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	cmd := exec.Command("mkdir", "-p", workdir)
+	err = cmd.Run()
 	if err != nil {
 		return nil, err
 	}
@@ -56,12 +69,15 @@ func NewUploader(rawCfg []byte, glToken, glURL, awsAccessKey, awsSecretKey, awsR
 	})
 
 	return &Uploader{
-		syncs:     cfg,
-		glClient:  gl,
-		glBaseURL: glURL,
-		s3Client:  awsS3,
-		awsRegion: awsRegion,
-		bucket:    bucket,
+		syncs:      cfg,
+		glClient:   gl,
+		glBaseURL:  glURL,
+		glUsername: glUsername,
+		glToken:    glToken,
+		s3Client:   awsS3,
+		awsRegion:  awsRegion,
+		bucket:     bucket,
+		workdir:    workdir,
 	}, nil
 }
 
@@ -96,8 +112,14 @@ func (u *Uploader) Run(ctx context.Context, dryRun bool) error {
 		return nil
 	}
 
-	err = u.removeOutdated(ctx, toDelete)
-	fmt.Println(toUpdate)
+	err = u.cloneRepositories(toUpdate)
+	if err != nil {
+		return err
+	}
+
+	// if updating was successful
+	// err = u.removeOutdated(ctx, toDelete)
+
 	return nil
 }
 
@@ -127,8 +149,6 @@ func (u *Uploader) getOutOfSync(ctx context.Context, glCommits map[string]string
 			// new target added to config file
 			outdated = append(outdated, sync)
 		} else if objInfo.CommitSHA != glCommits[sourcePid] {
-			fmt.Println(objInfo.CommitSHA)
-			fmt.Println(glCommits[sourcePid])
 			// existing target is out of date
 			outdated = append(outdated, sync)
 			toDelete = append(toDelete, objInfo.Key)
@@ -147,4 +167,21 @@ func (u *Uploader) getOutOfSync(ctx context.Context, glCommits map[string]string
 	}
 
 	return outdated, toDelete, nil
+}
+
+// clean target working directory
+func (u *Uploader) clean(directory string) error {
+	cmd := exec.Command("rm", "-rf", directory)
+	cmd.Dir = u.workdir
+	err := cmd.Run()
+	if err != nil {
+		return err
+	}
+	cmd = exec.Command("mkdir", directory)
+	cmd.Dir = u.workdir
+	err = cmd.Run()
+	if err != nil {
+		return err
+	}
+	return nil
 }

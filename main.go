@@ -24,10 +24,12 @@ func main() {
 		"AWS_REGION":            "",
 		"AWS_S3_BUCKET":         "",
 		"CONFIG_FILE_PATH":      "",
-		"GITLAB_TOKEN":          "",
 		"GITLAB_BASE_URL":       "",
+		"GITLAB_USERNAME":       "",
+		"GITLAB_TOKEN":          "",
 		"PUBLIC_GPG_PATH":       "",
 		"RECONCILE_SLEEP_TIME":  "5m",
+		"WORKDIR":               "/working",
 	})
 	if err != nil {
 		log.Fatalln(err)
@@ -40,12 +42,14 @@ func main() {
 
 	uploader, err := pkg.NewUploader(
 		raw,
-		envVars["GITLAB_TOKEN"],
 		envVars["GITLAB_BASE_URL"],
+		envVars["GITLAB_USERNAME"],
+		envVars["GITLAB_TOKEN"],
 		envVars["AWS_ACCESS_KEY_ID"],
 		envVars["AWS_SECRET_ACCESS_KEY"],
 		envVars["AWS_REGION"],
 		envVars["AWS_S3_BUCKET"],
+		envVars["WORKDIR"],
 	)
 	if err != nil {
 		log.Fatalln(err)

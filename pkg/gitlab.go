@@ -1,6 +1,10 @@
 package pkg
 
-import "fmt"
+import (
+	"fmt"
+	"net/url"
+	"os/exec"
+)
 
 // keys are gitlab PID (gitlab_group/project_name)
 // values are commit SHA
@@ -21,7 +25,46 @@ func (u *Uploader) getLatestGitlabCommits() (pidToCommit, error) {
 	return latestCommits, nil
 }
 
-func cloneRepositories(baseURL string) error {
+func (u *Uploader) cloneRepositories(toUpdate []*GitSync) error {
+	const CLONE_DIRECTORY = "clones"
+
+	err := u.clean(CLONE_DIRECTORY)
+	if err != nil {
+		return err
+	}
+
+	for _, gs := range toUpdate {
+		authURL, err := u.formatAuthURL(fmt.Sprintf("%s/%s", gs.Source.Group, gs.Source.ProjectName))
+		if err != nil {
+			return err
+		}
+
+		args := []string{"-c", fmt.Sprintf("git clone %s", authURL)}
+		cmd := exec.Command("/bin/sh", args...)
+		cmd.Dir = fmt.Sprintf("%s/%s", u.workdir, CLONE_DIRECTORY)
+		err = cmd.Run()
+		if err != nil {
+			return err
+		}
+
+		gs.repoPath = fmt.Sprintf("%s/%s/%s", u.workdir, CLONE_DIRECTORY, gs.Source.ProjectName)
+	}
 
 	return nil
+}
+
+// returns git user-auth format of remote url
+func (u *Uploader) formatAuthURL(pid string) (string, error) {
+	projectURL := fmt.Sprintf("%s/%s", u.glBaseURL, pid)
+	parsedURL, err := url.Parse(projectURL)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s://%s:%s@%s%s.git",
+		parsedURL.Scheme,
+		u.glUsername,
+		u.glToken,
+		parsedURL.Host,
+		parsedURL.Path,
+	), nil
 }
