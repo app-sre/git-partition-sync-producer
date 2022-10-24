@@ -57,12 +57,18 @@ func main() {
 	}
 
 	ctx := context.Background()
+
 	for {
-		err = uploader.Run(ctx)
+		err = uploader.Run(ctx, dryRun)
 		if err != nil {
 			log.Println(err)
 		}
-		time.Sleep(sleepDur)
+
+		if dryRun {
+			return
+		} else {
+			time.Sleep(sleepDur)
+		}
 	}
 }
 
