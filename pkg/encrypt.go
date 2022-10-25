@@ -23,8 +23,8 @@ func (u *Uploader) encryptRepoTars(toUpdate []*GitSync) error {
 	}
 
 	for _, gs := range toUpdate {
-		gpgPath := fmt.Sprintf("%s/%s/%s.tar.age", u.workdir, ENCRYPT_DIRECTORY, gs.Source.ProjectName)
-		f, err := os.Create(gpgPath)
+		encryptPath := fmt.Sprintf("%s/%s/%s.tar.age", u.workdir, ENCRYPT_DIRECTORY, gs.Source.ProjectName)
+		f, err := os.Create(encryptPath)
 		if err != nil {
 			return err
 		}
@@ -46,6 +46,7 @@ func (u *Uploader) encryptRepoTars(toUpdate []*GitSync) error {
 		if err := encWriter.Close(); err != nil {
 			return err
 		}
+		gs.encryptPath = encryptPath
 	}
 
 	return nil
