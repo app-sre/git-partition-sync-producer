@@ -27,7 +27,7 @@ func main() {
 		"GITLAB_BASE_URL":       "",
 		"GITLAB_USERNAME":       "",
 		"GITLAB_TOKEN":          "",
-		"PUBLIC_GPG_PATH":       "",
+		"PUBLIC_KEY":            "",
 		"RECONCILE_SLEEP_TIME":  "5m",
 		"WORKDIR":               "/working",
 	})
@@ -50,6 +50,7 @@ func main() {
 		envVars["AWS_REGION"],
 		envVars["AWS_S3_BUCKET"],
 		envVars["WORKDIR"],
+		envVars["PUBLIC_KEY"],
 	)
 	if err != nil {
 		log.Fatalln(err)

@@ -25,7 +25,7 @@ type GitSync struct {
 	Destination GitTarget `yaml:"destination"`
 	repoPath    string
 	tarPath     string
-	gpgPath     string
+	encryptPath string
 }
 
 type Uploader struct {
@@ -38,9 +38,10 @@ type Uploader struct {
 	awsRegion  string
 	bucket     string
 	workdir    string
+	publicKey  string
 }
 
-func NewUploader(rawCfg []byte, glURL, glUsername, glToken, awsAccessKey, awsSecretKey, awsRegion, bucket, workdir string) (*Uploader, error) {
+func NewUploader(rawCfg []byte, glURL, glUsername, glToken, awsAccessKey, awsSecretKey, awsRegion, bucket, workdir, pubKey string) (*Uploader, error) {
 	var cfg []*GitSync
 	err := yaml.Unmarshal(rawCfg, &cfg)
 	if err != nil {
@@ -78,6 +79,7 @@ func NewUploader(rawCfg []byte, glURL, glUsername, glToken, awsAccessKey, awsSec
 		awsRegion:  awsRegion,
 		bucket:     bucket,
 		workdir:    workdir,
+		publicKey:  pubKey,
 	}, nil
 }
 
@@ -118,6 +120,14 @@ func (u *Uploader) Run(ctx context.Context, dryRun bool) error {
 	}
 
 	err = u.tarRepos(toUpdate)
+	if err != nil {
+		return err
+	}
+
+	err = u.encryptRepoTars(toUpdate)
+	if err != nil {
+		return err
+	}
 
 	// if updating was successful
 	// err = u.removeOutdated(ctx, toDelete)
