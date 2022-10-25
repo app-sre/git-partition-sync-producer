@@ -29,19 +29,21 @@ type GitSync struct {
 }
 
 type Uploader struct {
-	syncs      []*GitSync
-	glClient   *gitlab.Client
+	awsRegion  string
+	bucket     string
 	glBaseURL  string
 	glUsername string
 	glToken    string
-	s3Client   *s3.Client
-	awsRegion  string
-	bucket     string
-	workdir    string
 	publicKey  string
+	workdir    string
+
+	glClient *gitlab.Client
+	s3Client *s3.Client
+
+	syncs []*GitSync
 }
 
-func NewUploader(rawCfg []byte, glURL, glUsername, glToken, awsAccessKey, awsSecretKey, awsRegion, bucket, workdir, pubKey string) (*Uploader, error) {
+func NewUploader(rawCfg []byte, awsAccessKey, awsSecretKey, awsRegion, bucket, glURL, glUsername, glToken, pubKey, workdir string) (*Uploader, error) {
 	var cfg []*GitSync
 	err := yaml.Unmarshal(rawCfg, &cfg)
 	if err != nil {
@@ -70,16 +72,16 @@ func NewUploader(rawCfg []byte, glURL, glUsername, glToken, awsAccessKey, awsSec
 	})
 
 	return &Uploader{
-		syncs:      cfg,
-		glClient:   gl,
+		awsRegion:  awsRegion,
+		bucket:     bucket,
 		glBaseURL:  glURL,
 		glUsername: glUsername,
 		glToken:    glToken,
-		s3Client:   awsS3,
-		awsRegion:  awsRegion,
-		bucket:     bucket,
-		workdir:    workdir,
 		publicKey:  pubKey,
+		workdir:    workdir,
+		glClient:   gl,
+		s3Client:   awsS3,
+		syncs:      cfg,
 	}, nil
 }
 

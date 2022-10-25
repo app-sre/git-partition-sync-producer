@@ -48,15 +48,15 @@ func main() {
 	for {
 		uploader, err := pkg.NewUploader(
 			raw,
-			envVars["GITLAB_BASE_URL"],
-			envVars["GITLAB_USERNAME"],
-			envVars["GITLAB_TOKEN"],
 			envVars["AWS_ACCESS_KEY_ID"],
 			envVars["AWS_SECRET_ACCESS_KEY"],
 			envVars["AWS_REGION"],
 			envVars["AWS_S3_BUCKET"],
-			envVars["WORKDIR"],
+			envVars["GITLAB_BASE_URL"],
+			envVars["GITLAB_USERNAME"],
+			envVars["GITLAB_TOKEN"],
 			envVars["PUBLIC_KEY"],
+			envVars["WORKDIR"],
 		)
 		if err != nil {
 			log.Fatalln(err)
