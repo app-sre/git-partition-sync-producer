@@ -102,18 +102,6 @@ func (u *Uploader) Run(ctx context.Context, dryRun bool) error {
 		return err
 	}
 
-	if dryRun {
-		for _, update := range toUpdate {
-			fmt.Println(fmt.Sprintf("[DRY RUN] s3 object for destination PID `%s/%s` will be updated",
-				update.Destination.Group,
-				update.Destination.ProjectName))
-		}
-		for _, delete := range toDelete {
-			fmt.Println(fmt.Sprintf("[DRY RUN] s3 object with key `%s` will be deleted", *delete))
-		}
-		return nil
-	}
-
 	err = u.cloneRepos(toUpdate)
 	if err != nil {
 		return err
@@ -129,9 +117,37 @@ func (u *Uploader) Run(ctx context.Context, dryRun bool) error {
 		return err
 	}
 
-	// if updating was successful
-	// err = u.removeOutdated(ctx, toDelete)
+	if dryRun {
+		for _, update := range toUpdate {
+			fmt.Println(fmt.Sprintf("[DRY RUN] s3 object for destination PID `%s/%s` will be updated",
+				update.Destination.Group,
+				update.Destination.ProjectName))
+		}
+		for _, delete := range toDelete {
+			fmt.Println(fmt.Sprintf("[DRY RUN] s3 object with key `%s` will be deleted", *delete))
+		}
+		return nil
+	}
 
+	err = u.uploadLatest(ctx, toUpdate, glCommits)
+	if err != nil {
+		return err
+	}
+	for _, update := range toUpdate {
+		fmt.Println(fmt.Sprintf("s3 object for destination PID `%s/%s` successfully updated",
+			update.Destination.Group,
+			update.Destination.ProjectName))
+	}
+
+	err = u.removeOutdated(ctx, toDelete)
+	if err != nil {
+		return err
+	}
+	for _, delete := range toDelete {
+		fmt.Println(fmt.Sprintf("s3 object with key `%s` successfully deleted", *delete))
+	}
+
+	log.Println("Run successfully completed")
 	return nil
 }
 
@@ -147,7 +163,7 @@ type DecodedKey struct {
 // commits stored within s3 keys for corresponding destination GitLab projects
 // return is slice of Sync that do not exist within s3Commits OR s3Commit != glCommit
 // and slice of s3 object keys to delete
-func (u *Uploader) getOutOfSync(ctx context.Context, glCommits map[string]string,
+func (u *Uploader) getOutOfSync(ctx context.Context, glCommits pidToCommit,
 	objInfos map[string]*s3ObjectInfo) ([]*GitSync, []*string, error) {
 
 	outdated := []*GitSync{}

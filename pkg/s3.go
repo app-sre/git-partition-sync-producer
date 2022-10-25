@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -59,7 +60,7 @@ func (u *Uploader) removeOutdated(ctx context.Context, toDeleteKeys []*string) e
 	ctxTimeout, cancel := context.WithTimeout(ctx, time.Second*5)
 	defer cancel()
 
-	var wg *sync.WaitGroup
+	wg := &sync.WaitGroup{}
 	ch := make(chan error)
 
 	for _, key := range toDeleteKeys {
@@ -80,6 +81,73 @@ func (u *Uploader) removeOutdated(ctx context.Context, toDeleteKeys []*string) e
 	go func() {
 		wg.Wait()
 		close(ch)
+	}()
+
+	for err := range ch {
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// cocurrently uploads latest encrypted tars to target s3 bucket
+func (u *Uploader) uploadLatest(ctx context.Context, toUpdate []*GitSync, glCommits pidToCommit) error {
+	ctxTimeout, cancel := context.WithTimeout(ctx, time.Second*10)
+	defer cancel()
+
+	wg := &sync.WaitGroup{}
+	ch := make(chan error)
+	// including sem due to following goroutines utilizing relatively expensive file io
+	sem := make(chan struct{}, 20) // arbitary value. TODO: evaluate resource consumption and adjust
+
+	for _, gs := range toUpdate {
+		wg.Add(1)
+		sem <- struct{}{} // block if 20 goroutines already running
+
+		go func(gsync *GitSync) {
+			defer func() { <-sem }() // release one from buffer
+			defer wg.Done()          // must exec before sem release
+
+			sourcePid := fmt.Sprintf("%s/%s", gsync.Source.Group, gsync.Source.ProjectName)
+
+			jsonStruct := &DecodedKey{
+				Group:       gsync.Destination.Group,
+				ProjectName: gsync.Destination.ProjectName,
+				CommitSHA:   glCommits[sourcePid],
+				Branch:      gsync.Destination.Branch,
+			}
+
+			jsonBytes, err := json.Marshal(jsonStruct)
+			if err != nil {
+				ch <- err
+				return
+			}
+
+			encodedJsonStr := base64.StdEncoding.EncodeToString(jsonBytes)
+			objKey := fmt.Sprintf("%s.tar.age", encodedJsonStr)
+
+			f, err := os.Open(gsync.encryptPath)
+			defer f.Close()
+
+			_, err = u.s3Client.PutObject(ctxTimeout, &s3.PutObjectInput{
+				Bucket: &u.bucket,
+				Key:    &objKey,
+				Body:   f,
+			})
+
+			if err != nil {
+				ch <- err
+				return
+			}
+		}(gs)
+	}
+
+	go func() {
+		wg.Wait()
+		close(ch)
+		close(sem)
 	}()
 
 	for err := range ch {
