@@ -1,4 +1,4 @@
-module github.com/app-sre/gitlab-sync-s3-push
+module github.com/dwelch0/gitlab-sync-s3-push
 
 go 1.18
 

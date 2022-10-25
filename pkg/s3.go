@@ -35,7 +35,7 @@ func (u *Uploader) getS3Keys(ctx context.Context) (map[string]*s3ObjectInfo, err
 	s3ObjectInfos := make(map[string]*s3ObjectInfo)
 	for _, obj := range res.Contents {
 		// remove file extension before attempting decode
-		// extension is .tar.gpg, split at first occurrence of .
+		// extension is .tar.age, split at first occurrence of .
 		encodedKey := strings.SplitN(*obj.Key, ".", 2)[0]
 		decodedBytes, err := base64.StdEncoding.DecodeString(encodedKey)
 		if err != nil {

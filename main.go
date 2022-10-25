@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/app-sre/gitlab-sync-s3-push/pkg"
+	"github.com/dwelch0/gitlab-sync-s3-push/pkg"
 )
 
 func main() {
