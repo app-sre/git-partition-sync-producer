@@ -40,30 +40,29 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	uploader, err := pkg.NewUploader(
-		raw,
-		envVars["GITLAB_BASE_URL"],
-		envVars["GITLAB_USERNAME"],
-		envVars["GITLAB_TOKEN"],
-		envVars["AWS_ACCESS_KEY_ID"],
-		envVars["AWS_SECRET_ACCESS_KEY"],
-		envVars["AWS_REGION"],
-		envVars["AWS_S3_BUCKET"],
-		envVars["WORKDIR"],
-		envVars["PUBLIC_KEY"],
-	)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
 	sleepDur, err := time.ParseDuration(envVars["RECONCILE_SLEEP_TIME"])
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	ctx := context.Background()
-
 	for {
+		uploader, err := pkg.NewUploader(
+			raw,
+			envVars["GITLAB_BASE_URL"],
+			envVars["GITLAB_USERNAME"],
+			envVars["GITLAB_TOKEN"],
+			envVars["AWS_ACCESS_KEY_ID"],
+			envVars["AWS_SECRET_ACCESS_KEY"],
+			envVars["AWS_REGION"],
+			envVars["AWS_S3_BUCKET"],
+			envVars["WORKDIR"],
+			envVars["PUBLIC_KEY"],
+		)
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		ctx := context.Background()
 		err = uploader.Run(ctx, dryRun)
 		if err != nil {
 			log.Println(err)

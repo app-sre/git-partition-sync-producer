@@ -126,6 +126,7 @@ func (u *Uploader) Run(ctx context.Context, dryRun bool) error {
 		for _, delete := range toDelete {
 			fmt.Println(fmt.Sprintf("[DRY RUN] s3 object with key `%s` will be deleted", *delete))
 		}
+		log.Println("[DRY RUN] Run successfully completed")
 		return nil
 	}
 
