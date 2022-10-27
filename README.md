@@ -2,6 +2,8 @@
 Uploads encrypted/zipped latest versions of target GitLab projects to s3 bucket.  
 This works in tandem with [gitlab-sync-s3-pull](https://github.com/dwelch0/gitlab-sync-s3-pull) to sync GitLab instances in isolated environments.
 
+[age](https://github.com/FiloSottile/age) x25519 format keys are utilized.
+
 ![gitlab-sync-diagram](gitsync-diagram.png)
 
 ## Config File Format
