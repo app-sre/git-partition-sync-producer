@@ -130,15 +130,7 @@ func (u *Uploader) Run(ctx context.Context, dryRun bool) error {
 	}
 
 	if dryRun {
-		for _, update := range toUpdate {
-			fmt.Println(fmt.Sprintf("[DRY RUN] s3 object for destination PID `%s/%s` will be updated",
-				update.Destination.Group,
-				update.Destination.ProjectName))
-		}
-		for _, delete := range toDelete {
-			fmt.Println(fmt.Sprintf("[DRY RUN] s3 object with key `%s` will be deleted", *delete))
-		}
-		log.Println("[DRY RUN] Run successfully completed")
+		printDryRun(toUpdate, toDelete)
 		return nil
 	}
 
@@ -225,4 +217,16 @@ func (u *Uploader) clean(directory string) error {
 		return err
 	}
 	return nil
+}
+
+func printDryRun(toUpdate []*GitSync, toDelete []*string) {
+	for _, update := range toUpdate {
+		fmt.Println(fmt.Sprintf("[DRY RUN] s3 object for destination PID `%s/%s` will be updated",
+			update.Destination.Group,
+			update.Destination.ProjectName))
+	}
+	for _, delete := range toDelete {
+		fmt.Println(fmt.Sprintf("[DRY RUN] s3 object with key `%s` will be deleted", *delete))
+	}
+	log.Println("[DRY RUN] Run successfully completed")
 }
