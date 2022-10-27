@@ -43,7 +43,17 @@ type Uploader struct {
 	syncs []*GitSync
 }
 
-func NewUploader(rawCfg []byte, awsAccessKey, awsSecretKey, awsRegion, bucket, glURL, glUsername, glToken, pubKey, workdir string) (*Uploader, error) {
+func NewUploader(rawCfg []byte,
+	awsAccessKey,
+	awsSecretKey,
+	awsRegion,
+	bucket,
+	glURL,
+	glUsername,
+	glToken,
+	pubKey,
+	workdir string) (*Uploader, error) {
+
 	var cfg []*GitSync
 	err := yaml.Unmarshal(rawCfg, &cfg)
 	if err != nil {
