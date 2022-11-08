@@ -9,7 +9,7 @@ import (
 )
 
 // utilizes x25519 to output encrypted tars
-func (u *Uploader) encryptRepoTars(toUpdate []*GitSync) error {
+func (u *Uploader) encryptRepoTars(toUpdate []*SyncConfig) error {
 	const ENCRYPT_DIRECTORY = "encrypted"
 
 	err := u.clean(ENCRYPT_DIRECTORY)

@@ -6,19 +6,6 @@ This works in tandem with [gitlab-sync-s3-pull](https://github.com/dwelch0/gitla
 
 ![gitlab-sync-diagram](gitsync-diagram.png)
 
-## Config File Format
-Yaml file is an array of objects with following format:
-
-```
-source: 
-  project_name
-  namespace
-  branch
-destination:
-  project_name
-  namespace
-  branch
-```
 ## Environment Variables
 
 ### Required
@@ -26,13 +13,16 @@ destination:
 * AWS_SECRET_ACCESS_KEY
 * AWS_REGION
 * AWS_S3_BUCKET - the name. not an ARN
-* CONFIG_FILE_PATH - absolute path to yaml config file 
 * GITLAB_BASE_URL - GitLab instance base url. Ex: https://gitlab.foobar.com
 * GITLAB_USERNAME
 * GITLAB_TOKEN - repository read permission required
+* GRAPHQL_SERVER - url to graphql server for querying
 * PUBLIC_KEY - value of x25519 format public key. See [age encryption](https://github.com/FiloSottile/age#readme)
 
 ### Optional
+* GRAPHQL_QUERY_FILE - absolute path to graphql query file. defaults to `/query.graphql`
+* GRAPHQL_USERNAME
+* GRAPHQL_PASSWORD
 * RECONCILE_SLEEP_TIME - time between runs. defaults to 5 minutes (5m)
 * WORKDIR - local directory where io operations will be performed
 

@@ -2,31 +2,20 @@ package pkg
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os/exec"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/machinebox/graphql"
 	"github.com/xanzy/go-gitlab"
-
 	"gopkg.in/yaml.v3"
 )
-
-type GitTarget struct {
-	Group       string `yaml:"group"`
-	ProjectName string `yaml:"project_name"`
-	Branch      string `yaml:"branch"`
-}
-
-type GitSync struct {
-	Source      GitTarget `yaml:"source"`
-	Destination GitTarget `yaml:"destination"`
-	repoPath    string
-	tarPath     string
-	encryptPath string
-}
 
 type Uploader struct {
 	awsRegion  string
@@ -40,10 +29,37 @@ type Uploader struct {
 	glClient *gitlab.Client
 	s3Client *s3.Client
 
-	syncs []*GitSync
+	syncs []*SyncConfig
 }
 
-func NewUploader(rawCfg []byte,
+type Apps struct {
+	CodeComponentGitSyncs []CodeComponents `yaml:"apps_v1"`
+}
+
+type CodeComponents struct {
+	GitlabSyncs []GitlabSync `yaml:"codeComponents"`
+}
+
+type GitlabSync struct {
+	GitSync *SyncConfig `yaml:"gitlabSync"`
+}
+
+type SyncConfig struct {
+	Source      GitTarget `yaml:"sourceProject"`
+	Destination GitTarget `yaml:"destinationProject"`
+	repoPath    string
+	tarPath     string
+	encryptPath string
+}
+
+type GitTarget struct {
+	ProjectName string `yaml:"name"`
+	Group       string `yaml:"group"`
+	Branch      string `yaml:"branch"`
+}
+
+func NewUploader(
+	ctx context.Context,
 	awsAccessKey,
 	awsSecretKey,
 	awsRegion,
@@ -51,11 +67,14 @@ func NewUploader(rawCfg []byte,
 	glURL,
 	glUsername,
 	glToken,
+	gqlURL,
+	gqlFile,
+	gqlUsername,
+	gqlPassword,
 	pubKey,
 	workdir string) (*Uploader, error) {
 
-	var cfg []*GitSync
-	err := yaml.Unmarshal(rawCfg, &cfg)
+	cfg, err := getConfig(ctx, gqlURL, gqlFile, gqlUsername, gqlPassword)
 	if err != nil {
 		return nil, err
 	}
@@ -163,15 +182,67 @@ type DecodedKey struct {
 	Branch      string `json:"branch"`
 }
 
+// performs graphql query and processes raw result
+func getConfig(ctx context.Context, gqlUrl, gqlFile, gqlUsername, gqlPassowrd string) ([]*SyncConfig, error) {
+	client := graphql.NewClient(gqlUrl)
+
+	query, err := ioutil.ReadFile(gqlFile)
+	if err != nil {
+		return nil, err
+	}
+
+	req := graphql.NewRequest(string(query))
+
+	// default values
+	if gqlUsername != "dev" && gqlPassowrd != "dev" {
+		req.Header.Set("Authorization",
+			fmt.Sprintf("Basic %s",
+				base64.StdEncoding.EncodeToString(
+					[]byte(fmt.Sprintf("%s:%s", gqlUsername, gqlPassowrd)),
+				),
+			),
+		)
+	}
+
+	ctxTimeout, cancel := context.WithTimeout(ctx, time.Second*5)
+	defer cancel()
+
+	var rawCfg map[string]interface{}
+	err = client.Run(ctxTimeout, req, &rawCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	appBytes, err := yaml.Marshal(rawCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	var config Apps
+	err = yaml.Unmarshal(appBytes, &config)
+	if err != nil {
+		return nil, err
+	}
+
+	syncs := []*SyncConfig{}
+	for _, cc := range config.CodeComponentGitSyncs {
+		for _, gs := range cc.GitlabSyncs {
+			syncs = append(syncs, gs.GitSync)
+		}
+	}
+
+	return syncs, nil
+}
+
 // iterates through desired Syncs (defined within config file)
 // and compares latest commits on source GitLab projects against
 // commits stored within s3 keys for corresponding destination GitLab projects
 // return is slice of Sync that do not exist within s3Commits OR s3Commit != glCommit
 // and slice of s3 object keys to delete
 func (u *Uploader) getOutOfSync(ctx context.Context, glCommits pidToCommit,
-	objInfos map[string]*s3ObjectInfo) ([]*GitSync, []*string, error) {
+	objInfos map[string]*s3ObjectInfo) ([]*SyncConfig, []*string, error) {
 
-	outdated := []*GitSync{}
+	outdated := []*SyncConfig{}
 	toDelete := []*string{}
 	for _, sync := range u.syncs {
 		sourcePid := fmt.Sprintf("%s/%s", sync.Source.Group, sync.Source.ProjectName)
@@ -219,7 +290,7 @@ func (u *Uploader) clean(directory string) error {
 	return nil
 }
 
-func printDryRun(toUpdate []*GitSync, toDelete []*string) {
+func printDryRun(toUpdate []*SyncConfig, toDelete []*string) {
 	for _, update := range toUpdate {
 		fmt.Println(fmt.Sprintf("[DRY RUN] s3 object for destination PID `%s/%s` will be updated",
 			update.Destination.Group,
