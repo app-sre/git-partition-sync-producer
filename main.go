@@ -23,10 +23,13 @@ func main() {
 		"AWS_SECRET_ACCESS_KEY": "",
 		"AWS_REGION":            "",
 		"AWS_S3_BUCKET":         "",
-		"CONFIG_FILE_PATH":      "",
 		"GITLAB_BASE_URL":       "",
 		"GITLAB_USERNAME":       "",
 		"GITLAB_TOKEN":          "",
+		"GRAPHQL_SERVER":        "",
+		"GRAPHQL_QUERY_FILE":    "/query.graphql",
+		"GRAPHQL_USERNAME":      "dev",
+		"GRAPHQL_PASSWORD":      "dev",
 		"PUBLIC_KEY":            "",
 		"RECONCILE_SLEEP_TIME":  "5m",
 		"WORKDIR":               "/working",
@@ -35,10 +38,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	raw, err := os.ReadFile(envVars["CONFIG_FILE_PATH"])
-	if err != nil {
-		log.Fatalln(err)
-	}
+	// retrieve raw from graphql
 
 	sleepDur, err := time.ParseDuration(envVars["RECONCILE_SLEEP_TIME"])
 	if err != nil {
@@ -46,8 +46,10 @@ func main() {
 	}
 
 	for {
+		ctx := context.Background()
+
 		uploader, err := pkg.NewUploader(
-			raw,
+			ctx,
 			envVars["AWS_ACCESS_KEY_ID"],
 			envVars["AWS_SECRET_ACCESS_KEY"],
 			envVars["AWS_REGION"],
@@ -55,6 +57,10 @@ func main() {
 			envVars["GITLAB_BASE_URL"],
 			envVars["GITLAB_USERNAME"],
 			envVars["GITLAB_TOKEN"],
+			envVars["GRAPHQL_SERVER"],
+			envVars["GRAPHQL_QUERY_FILE"],
+			envVars["GRAPHQL_USERNAME"],
+			envVars["GRAPHQL_PASSWORD"],
 			envVars["PUBLIC_KEY"],
 			envVars["WORKDIR"],
 		)
@@ -62,7 +68,6 @@ func main() {
 			log.Fatalln(err)
 		}
 
-		ctx := context.Background()
 		err = uploader.Run(ctx, dryRun)
 		if err != nil {
 			log.Println(err)

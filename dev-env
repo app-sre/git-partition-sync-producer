@@ -1,0 +1,2 @@
+export GRAPHQL_SERVER=http://localhost:4000/graphql
+export GRAPHQL_QUERY_FILE=query.graphql

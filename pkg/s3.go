@@ -93,7 +93,7 @@ func (u *Uploader) removeOutdated(ctx context.Context, toDeleteKeys []*string) e
 }
 
 // cocurrently uploads latest encrypted tars to target s3 bucket
-func (u *Uploader) uploadLatest(ctx context.Context, toUpdate []*GitSync, glCommits pidToCommit) error {
+func (u *Uploader) uploadLatest(ctx context.Context, toUpdate []*SyncConfig, glCommits pidToCommit) error {
 	ctxTimeout, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 
@@ -106,7 +106,7 @@ func (u *Uploader) uploadLatest(ctx context.Context, toUpdate []*GitSync, glComm
 		wg.Add(1)
 		sem <- struct{}{} // block if 20 goroutines already running
 
-		go func(gsync *GitSync) {
+		go func(gsync *SyncConfig) {
 			defer func() { <-sem }() // release one from buffer
 			defer wg.Done()          // must exec before sem release
 
