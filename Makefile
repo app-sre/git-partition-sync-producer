@@ -1,4 +1,4 @@
-NAME				:= gitlab-sync-s3-push
+NAME				:= git-partition-sync-producer
 REPO				:= quay.io/app-sre/$(NAME)
 TAG					:= $(shell git rev-parse --short HEAD)
 
