@@ -1,3 +1,4 @@
 dev-config.yaml
 tests/
 workdir/
+git-partition-sync-producer
