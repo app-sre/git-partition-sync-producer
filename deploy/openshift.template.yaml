@@ -36,10 +36,7 @@ objects:
         - image: ${IMAGE}:${IMAGE_TAG}
           imagePullPolicy: Always
           name: git-partition-sync-producer
-          command: ["/bin/sh"]
-          args: 
-          - "-c"
-          - "/git-partition-sync-producer -dry-run=${DRY_RUN}"
+          args: ["-dry-run=${DRY_RUN}"]
           env:
           - name: RECONCILE_SLEEP_TIME
             value: ${RECONCILE_SLEEP_TIME}
