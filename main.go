@@ -73,11 +73,7 @@ func main() {
 			log.Println(err)
 		}
 
-		if dryRun {
-			return
-		} else {
-			time.Sleep(sleepDur)
-		}
+		time.Sleep(sleepDur)
 	}
 }
 
