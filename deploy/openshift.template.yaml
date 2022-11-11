@@ -15,7 +15,6 @@ objects:
     annotations:
       ignore-check.kube-linter.io/minimum-three-replicas: "git-partition-sync-producer design does not adequately account for multiple replicas"
       ignore-check.kube-linter.io/no-readiness-probe: "git-partition-sync-producer does not receive traffic"
-      ignore-check.kube-linter.io/no-liveness-probe: "TODO: https://issues.redhat.com/browse/APPSRE-5919"
     name: git-partition-sync-producer
   spec:
     replicas: ${{REPLICAS}}
@@ -33,15 +32,18 @@ objects:
           app: git-partition-sync-producer
       spec:
         serviceAccountName: git-partition-sync-producer
-        volumes:
-        - name: private-gpg-key
-          secret:
-            secretName: private-gpg-key
         containers:
         - image: ${IMAGE}:${IMAGE_TAG}
           imagePullPolicy: Always
           name: git-partition-sync-producer
+          args: ["-dry-run=${DRY_RUN}"]
           env:
+          - name: RECONCILE_SLEEP_TIME
+            value: ${RECONCILE_SLEEP_TIME}
+          - name: GRAPHQL_QUERY_FILE
+            value: ${GRAPHQL_QUERY_FILE}
+          - name: WORKDIR
+            value: ${WORKDIR}
           - name: AWS_ACCESS_KEY_ID
             valueFrom:
               secretKeyRef:
@@ -80,8 +82,23 @@ objects:
           - name: PUBLIC_KEY
             valueFrom:
               secretKeyRef:
-                key: public-key
+                key: public.key
                 name: ${VAULT_SECRET_NAME}
+          - name: GRAPHQL_SERVER
+            valueFrom:
+              secretKeyRef:
+                key: endpoint_url
+                name: ${GQL_SECRET_NAME}
+          - name: GRAPHQL_USERNAME
+            valueFrom:
+              secretKeyRef:
+                key: username
+                name: ${GQL_SECRET_NAME}
+          - name: GRAPHQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: password
+                name: ${GQL_SECRET_NAME}
           resources:
             requests:
               memory: ${MEMORY_REQUESTS}
@@ -98,10 +115,15 @@ parameters:
   value: latest
   displayName: git-partition-sync-producer version
   description: git-partition-sync-producer version which defaults to latest
-- name: PRIVATE_GPG_PATH
-  value: /private.gpg
-- name: REQUEST_TIMEOUT
-  value: 60
+- name: RECONCILE_SLEEP_TIME
+  value: '15m'
+- name: DRY_RUN
+  description: runs vault-manager in dry-run mode when true
+  value: 'true'
+- name: GRAPHQL_QUERY_FILE
+  value: '/query.graphql'
+- name: WORKDIR
+  value: '/working'
 - name: MEMORY_REQUESTS
   value: 200Mi
 - name: MEMORY_LIMIT
@@ -110,5 +132,9 @@ parameters:
   value: 100m
 - name: CPU_LIMIT
   value: 150m
+- name: REPLICAS
+  value: '1'
+- name: GQL_SECRET_NAME
+  value: gql-creds
 - name: VAULT_SECRET_NAME
   value: git-partition-sync-producer

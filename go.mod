@@ -1,14 +1,14 @@
-module github.com/dwelch0/gitlab-sync-s3-push
+module github.com/app-sre/git-partition-sync-producer
 
 go 1.18
 
 require (
 	filippo.io/age v1.0.0
 	github.com/aws/aws-sdk-go-v2 v1.17.1
-	github.com/aws/aws-sdk-go-v2/credentials v1.12.23
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.29.1
+	github.com/aws/aws-sdk-go-v2/credentials v1.12.24
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.29.2
 	github.com/machinebox/graphql v0.2.2
-	github.com/xanzy/go-gitlab v0.73.1
+	github.com/xanzy/go-gitlab v0.74.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
