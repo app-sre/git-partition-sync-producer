@@ -14,7 +14,9 @@ import (
 
 func main() {
 	var dryRun bool
-	flag.BoolVar(&dryRun, "dry-run", false, "If true, will only print planned actions")
+	var runOnce bool
+	flag.BoolVar(&dryRun, "dry-run", true, "If true, will only print planned actions")
+	flag.BoolVar(&dryRun, "run-once", true, "If true, will exit after single execution")
 	flag.Parse()
 
 	// define vars to look for and any defaults
@@ -73,7 +75,11 @@ func main() {
 			log.Println(err)
 		}
 
-		time.Sleep(sleepDur)
+		if runOnce {
+			return
+		} else {
+			time.Sleep(sleepDur)
+		}
 	}
 }
 
