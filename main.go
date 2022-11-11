@@ -16,7 +16,7 @@ func main() {
 	var dryRun bool
 	var runOnce bool
 	flag.BoolVar(&dryRun, "dry-run", true, "If true, will only print planned actions")
-	flag.BoolVar(&dryRun, "run-once", true, "If true, will exit after single execution")
+	flag.BoolVar(&runOnce, "run-once", true, "If true, will exit after single execution")
 	flag.Parse()
 
 	// define vars to look for and any defaults
