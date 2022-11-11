@@ -4,4 +4,4 @@
 export GOBIN="${PWD}/.gobin"
 export PATH="${GOBIN}:${PATH}"
 
-make test build
+make build
