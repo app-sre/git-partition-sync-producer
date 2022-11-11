@@ -82,7 +82,7 @@ objects:
           - name: PUBLIC_KEY
             valueFrom:
               secretKeyRef:
-                key: public-key
+                key: public.key
                 name: ${VAULT_SECRET_NAME}
           - name: GRAPHQL_SERVER
             valueFrom:
