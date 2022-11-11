@@ -36,7 +36,7 @@ objects:
         - image: ${IMAGE}:${IMAGE_TAG}
           imagePullPolicy: Always
           name: git-partition-sync-producer
-          args: ["-dry-run=${DRY_RUN}"]
+          args: ["-dry-run=${DRY_RUN}", "-run-once=${RUN_ONCE}"]
           env:
           - name: RECONCILE_SLEEP_TIME
             value: ${RECONCILE_SLEEP_TIME}
@@ -120,6 +120,9 @@ parameters:
 - name: DRY_RUN
   description: runs vault-manager in dry-run mode when true
   value: 'true'
+- name: RUN_ONCE
+  description: exits after one reconciliation attempt when true
+  value: 'false'
 - name: GRAPHQL_QUERY_FILE
   value: '/query.graphql'
 - name: WORKDIR
