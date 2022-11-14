@@ -227,7 +227,9 @@ func getConfig(ctx context.Context, gqlUrl, gqlFile, gqlUsername, gqlPassowrd st
 	syncs := []*SyncConfig{}
 	for _, cc := range config.CodeComponentGitSyncs {
 		for _, gs := range cc.GitlabSyncs {
-			syncs = append(syncs, gs.GitSync)
+			if gs.GitSync != nil {
+				syncs = append(syncs, gs.GitSync)
+			}
 		}
 	}
 
