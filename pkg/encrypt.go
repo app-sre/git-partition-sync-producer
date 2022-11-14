@@ -8,10 +8,10 @@ import (
 	"filippo.io/age"
 )
 
+const ENCRYPT_DIRECTORY = "encrypted"
+
 // utilizes x25519 to output encrypted tars
 func (u *Uploader) encryptRepoTars(toUpdate []*SyncConfig) error {
-	const ENCRYPT_DIRECTORY = "encrypted"
-
 	err := u.clean(ENCRYPT_DIRECTORY)
 	if err != nil {
 		return err

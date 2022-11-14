@@ -118,6 +118,8 @@ func NewUploader(
 func (u *Uploader) Run(ctx context.Context, dryRun bool) error {
 	log.Println("Starting run...")
 
+	defer u.clear()
+
 	glCommits, err := u.getLatestGitlabCommits()
 	if err != nil {
 		return err
@@ -286,6 +288,17 @@ func (u *Uploader) clean(directory string) error {
 	cmd = exec.Command("mkdir", directory)
 	cmd.Dir = u.workdir
 	err = cmd.Run()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// clear all items in working directory
+func (u *Uploader) clear() error {
+	cmd := exec.Command("rm", "-rf", ENCRYPT_DIRECTORY, TAR_DIRECTORY, CLONE_DIRECTORY)
+	cmd.Dir = u.workdir
+	err := cmd.Run()
 	if err != nil {
 		return err
 	}

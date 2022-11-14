@@ -9,9 +9,9 @@ import (
 	"strings"
 )
 
-func (u *Uploader) tarRepos(toUpdate []*SyncConfig) error {
-	const TAR_DIRECTORY = "tars"
+const TAR_DIRECTORY = "tars"
 
+func (u *Uploader) tarRepos(toUpdate []*SyncConfig) error {
 	err := u.clean(TAR_DIRECTORY)
 	if err != nil {
 		return err
