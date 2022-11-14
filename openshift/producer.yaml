@@ -43,7 +43,7 @@ objects:
           - name: GRAPHQL_QUERY_FILE
             value: ${GRAPHQL_QUERY_FILE}
           - name: WORKDIR
-            value: ${WORKDIR}
+            value: "${VOLUME_PATH}${WORKDIR}"
           - name: AWS_ACCESS_KEY_ID
             valueFrom:
               secretKeyRef:
@@ -106,6 +106,12 @@ objects:
             limits:
               memory: ${MEMORY_LIMIT}
               cpu: ${CPU_LIMIT}
+          volumeMounts:
+          - name: clones
+            mountPath: ${VOLUME_PATH}
+        volumes:
+        - name: clones
+          emptyDir: {}
 parameters:
 - name: IMAGE
   value: quay.io/app-sre/git-partition-sync-producer
@@ -125,6 +131,8 @@ parameters:
   value: 'false'
 - name: GRAPHQL_QUERY_FILE
   value: '/query.graphql'
+- name: VOLUME_PATH
+  value: '/clones'
 - name: WORKDIR
   value: '/working'
 - name: MEMORY_REQUESTS
