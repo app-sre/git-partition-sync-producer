@@ -171,6 +171,11 @@ func (u *Uploader) Run(ctx context.Context, dryRun bool) error {
 		fmt.Println(fmt.Sprintf("s3 object with key `%s` successfully deleted", *delete))
 	}
 
+	err = u.clean(u.workdir)
+	if err != nil {
+		return err
+	}
+
 	log.Println("Run successfully completed")
 	return nil
 }
