@@ -106,6 +106,12 @@ objects:
             limits:
               memory: ${MEMORY_LIMIT}
               cpu: ${CPU_LIMIT}
+          volumeMounts:
+          - name: working
+            mountPath: ${WORKDIR}  
+        volumes:
+        - name: working
+          emptyDir: {}
 parameters:
 - name: IMAGE
   value: quay.io/app-sre/git-partition-sync-producer
