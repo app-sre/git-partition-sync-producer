@@ -25,9 +25,9 @@ func (u *Uploader) getLatestGitlabCommits() (pidToCommit, error) {
 	return latestCommits, nil
 }
 
-func (u *Uploader) cloneRepos(toUpdate []*SyncConfig) error {
-	const CLONE_DIRECTORY = "clones"
+const CLONE_DIRECTORY = "glrepos"
 
+func (u *Uploader) cloneRepos(toUpdate []*SyncConfig) error {
 	err := u.clean(CLONE_DIRECTORY)
 	if err != nil {
 		return err
