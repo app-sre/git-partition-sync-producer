@@ -43,7 +43,7 @@ objects:
           - name: GRAPHQL_QUERY_FILE
             value: ${GRAPHQL_QUERY_FILE}
           - name: WORKDIR
-            value: "${VOLUME_PATH}${WORKDIR}"
+            value: ${VOLUME_PATH}/${WORKDIR}
           - name: AWS_ACCESS_KEY_ID
             valueFrom:
               secretKeyRef:
@@ -134,7 +134,7 @@ parameters:
 - name: VOLUME_PATH
   value: '/clones'
 - name: WORKDIR
-  value: '/working'
+  value: 'working'
 - name: MEMORY_REQUESTS
   value: 200Mi
 - name: MEMORY_LIMIT
