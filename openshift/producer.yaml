@@ -3,10 +3,6 @@ kind: Template
 metadata:
   name: git-partition-sync-producer
 objects:
-- apiVersion: v1
-  kind: ServiceAccount
-  metadata:
-    name: git-partition-sync-producer
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
