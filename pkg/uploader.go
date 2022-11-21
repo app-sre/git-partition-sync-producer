@@ -206,11 +206,21 @@ func getConfig(ctx context.Context, gqlUrl, gqlFile, gqlUsername, gqlPassowrd st
 		)
 	}
 
-	ctxTimeout, cancel := context.WithTimeout(ctx, time.Second*5)
-	defer cancel()
-
+	// execute query with retry logic and capture the response
 	var rawCfg map[string]interface{}
-	err = client.Run(ctxTimeout, req, &rawCfg)
+	for _, backoff := range []time.Duration{1 * time.Second, 3 * time.Second, 10 * time.Second} {
+		ctxTimeout, cancel := context.WithTimeout(ctx, time.Second*10)
+		defer cancel()
+
+		err = client.Run(ctxTimeout, req, &rawCfg)
+		if err == nil {
+			break
+		}
+
+		log.Println(err)
+		time.Sleep(backoff)
+	}
+
 	if err != nil {
 		return nil, err
 	}
