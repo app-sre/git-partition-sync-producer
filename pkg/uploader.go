@@ -73,14 +73,14 @@ func NewUploader(
 	gqlFile,
 	gqlUsername,
 	gqlPassword,
-	masterBundleSha,
+	prevBundleSha,
 	pubKey,
 	workdir string) (*Uploader, error) {
 
 	// indicates PR check run
-	if len(masterBundleSha) > 0 {
+	if len(prevBundleSha) > 0 {
 		// determine if exit early can occur
-		unchanged, err := detectUnchanged(ctx, gqlURL, gqlFile, gqlUsername, gqlPassword, masterBundleSha)
+		unchanged, err := detectUnchanged(ctx, gqlURL, gqlFile, gqlUsername, gqlPassword, prevBundleSha)
 		if err != nil {
 			return nil, err
 		}
@@ -202,11 +202,11 @@ type DecodedKey struct {
 // query previous graphql bundle and latest bundle then compare bundles for relevant changes
 // return true if relevant attributes of both bundles are equal
 // this is utilized to support early exit in PR checks
-func detectUnchanged(ctx context.Context, gqlUrl, gqlFile, gqlUsername, gqlPassowrd, masterBundleSha string) (bool, error) {
+func detectUnchanged(ctx context.Context, gqlUrl, gqlFile, gqlUsername, gqlPassowrd, prevBundleSha string) (bool, error) {
 	// replace `graphql` portion of path with specific sha to query
 	slicedUrl := strings.Split(gqlUrl, "/")
 	gqlBaseUrl := strings.Join(slicedUrl[:len(slicedUrl)-1], "/")
-	gqlShaUrl := fmt.Sprintf("%s/graphqlsha/%s", gqlBaseUrl, masterBundleSha)
+	gqlShaUrl := fmt.Sprintf("%s/graphqlsha/%s", gqlBaseUrl, prevBundleSha)
 
 	// query graphql server at both prev and curr bundle
 	prevCfg, err := getConfig(ctx, gqlShaUrl, gqlFile, gqlUsername, gqlPassowrd)
