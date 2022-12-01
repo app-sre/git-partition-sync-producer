@@ -18,8 +18,10 @@ import (
 func main() {
 	var dryRun bool
 	var runOnce bool
+	var prCheck bool
 	flag.BoolVar(&dryRun, "dry-run", true, "If true, will only print planned actions")
 	flag.BoolVar(&runOnce, "run-once", true, "If true, will exit after single execution")
+	flag.BoolVar(&prCheck, "pr-check", false, "If true, will compare graphql bundles for early exit")
 	flag.Parse()
 
 	// define vars to look for and any defaults
@@ -59,6 +61,13 @@ func main() {
 			http.ListenAndServe(fmt.Sprintf(":%s", envVars["METRICS_SERVER_PORT"]), nil)
 		}()
 	}
+
+	// processed separately from env map above because optional w/ no default val
+	masterBundleSha := os.Getenv("MASTER_BUNDLE_SHA256")
+	if prCheck && len(masterBundleSha) == 0 {
+		log.Fatalln("`MASTER_BUNDLE_SHA256` must be set when pr-check flag is true.")
+	}
+	envVars["MASTER_BUNDLE_SHA256"] = masterBundleSha
 
 	// retrieve raw from graphql
 

@@ -77,8 +77,8 @@ func NewUploader(
 	pubKey,
 	workdir string) (*Uploader, error) {
 
-	// indicates PR check run when different from default
-	if masterBundleSha != "unused" {
+	// indicates PR check run
+	if len(masterBundleSha) > 0 {
 		// determine if exit early can occur
 		unchanged, err := detectUnchanged(ctx, gqlURL, gqlFile, gqlUsername, gqlPassword, masterBundleSha)
 		if err != nil {
