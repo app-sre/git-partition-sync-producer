@@ -37,6 +37,7 @@ func main() {
 		"GRAPHQL_PASSWORD":      "dev",
 		"INSTANCE_SHARD":        "fedramp",
 		"METRICS_SERVER_PORT":   "9090",
+		"MASTER_BUNDLE_SHA256":  "unused",
 		"PUBLIC_KEY":            "",
 		"RECONCILE_SLEEP_TIME":  "5m",
 		"WORKDIR":               "/working",
@@ -79,11 +80,15 @@ func main() {
 			envVars["GRAPHQL_QUERY_FILE"],
 			envVars["GRAPHQL_USERNAME"],
 			envVars["GRAPHQL_PASSWORD"],
+			envVars["MASTER_BUNDLE_SHA256"],
 			envVars["PUBLIC_KEY"],
 			envVars["WORKDIR"],
 		)
 		if err != nil {
 			log.Fatalln(err)
+		} else if uploader == nil { // pr check exit early
+			log.Println("Relevant attributes have not changed. Exiting early.")
+			os.Exit(0)
 		}
 
 		err = uploader.Run(ctx, dryRun)
@@ -93,7 +98,7 @@ func main() {
 		}
 
 		if runOnce {
-			return
+			os.Exit(0)
 		} else {
 			utils.RecordMetrics(envVars["INSTANCE_SHARD"], status, time.Since(start))
 			time.Sleep(sleepDur)

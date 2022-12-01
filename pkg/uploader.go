@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"log"
 	"os/exec"
+	"reflect"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -71,8 +73,21 @@ func NewUploader(
 	gqlFile,
 	gqlUsername,
 	gqlPassword,
+	masterBundleSha,
 	pubKey,
 	workdir string) (*Uploader, error) {
+
+	// indicates PR check run when different from default
+	if masterBundleSha != "unused" {
+		// determine if exit early can occur
+		unchanged, err := detectUnchanged(ctx, gqlURL, gqlFile, gqlUsername, gqlPassword, masterBundleSha)
+		if err != nil {
+			return nil, err
+		}
+		if unchanged {
+			return nil, nil
+		}
+	}
 
 	cfg, err := getConfig(ctx, gqlURL, gqlFile, gqlUsername, gqlPassword)
 	if err != nil {
@@ -184,8 +199,71 @@ type DecodedKey struct {
 	Branch      string `json:"branch"`
 }
 
-// performs graphql query and processes raw result
+// query previous graphql bundle and latest bundle then compare bundles for relevant changes
+// return true if relevant attributes of both bundles are equal
+// this is utilized to support early exit in PR checks
+func detectUnchanged(ctx context.Context, gqlUrl, gqlFile, gqlUsername, gqlPassowrd, masterBundleSha string) (bool, error) {
+	// replace `graphql` portion of path with specific sha to query
+	slicedUrl := strings.Split(gqlUrl, "/")
+	gqlBaseUrl := strings.Join(slicedUrl[:len(slicedUrl)-1], "/")
+	gqlShaUrl := fmt.Sprintf("%s/graphqlsha/%s", gqlBaseUrl, masterBundleSha)
+
+	// query graphql server at both prev and curr bundle
+	prevCfg, err := getConfig(ctx, gqlShaUrl, gqlFile, gqlUsername, gqlPassowrd)
+	if err != nil {
+		return false, err
+	}
+	currCfg, err := getConfig(ctx, gqlUrl, gqlFile, gqlUsername, gqlPassowrd)
+	if err != nil {
+		return false, err
+	}
+
+	// convert cfgs to maps for comparison
+	prevCfgMap := make(map[string]*SyncConfig)
+	for _, sc := range prevCfg {
+		prevCfgMap[fmt.Sprintf("%s/%s", sc.Source.ProjectName, sc.Source.Group)] = sc
+	}
+	currCfgMap := make(map[string]*SyncConfig)
+	for _, sc := range currCfg {
+		currCfgMap[fmt.Sprintf("%s/%s", sc.Source.ProjectName, sc.Source.Group)] = sc
+	}
+
+	return reflect.DeepEqual(prevCfgMap, currCfgMap), nil
+}
+
+// query graphql and convert result into objects for reconcile
 func getConfig(ctx context.Context, gqlUrl, gqlFile, gqlUsername, gqlPassowrd string) ([]*SyncConfig, error) {
+	rawCfg, err := getGraphqlRaw(ctx, gqlUrl, gqlFile, gqlUsername, gqlPassowrd)
+	if err != nil {
+		return nil, err
+	}
+
+	appBytes, err := yaml.Marshal(rawCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	var config Apps
+	err = yaml.Unmarshal(appBytes, &config)
+	if err != nil {
+		return nil, err
+	}
+
+	syncs := []*SyncConfig{}
+	for _, cc := range config.CodeComponentGitSyncs {
+		for _, gs := range cc.GitlabSyncs {
+			if gs.GitSync != nil {
+				syncs = append(syncs, gs.GitSync)
+			}
+		}
+	}
+
+	return syncs, nil
+}
+
+// create graphql query request and perform query with retry logic
+// return is unaltered query response
+func getGraphqlRaw(ctx context.Context, gqlUrl, gqlFile, gqlUsername, gqlPassowrd string) (map[string]interface{}, error) {
 	client := graphql.NewClient(gqlUrl)
 
 	query, err := ioutil.ReadFile(gqlFile)
@@ -224,28 +302,7 @@ func getConfig(ctx context.Context, gqlUrl, gqlFile, gqlUsername, gqlPassowrd st
 	if err != nil {
 		return nil, err
 	}
-
-	appBytes, err := yaml.Marshal(rawCfg)
-	if err != nil {
-		return nil, err
-	}
-
-	var config Apps
-	err = yaml.Unmarshal(appBytes, &config)
-	if err != nil {
-		return nil, err
-	}
-
-	syncs := []*SyncConfig{}
-	for _, cc := range config.CodeComponentGitSyncs {
-		for _, gs := range cc.GitlabSyncs {
-			if gs.GitSync != nil {
-				syncs = append(syncs, gs.GitSync)
-			}
-		}
-	}
-
-	return syncs, nil
+	return rawCfg, nil
 }
 
 // iterates through desired Syncs (defined within config file)
