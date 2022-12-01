@@ -95,7 +95,7 @@ func main() {
 		)
 		if err != nil {
 			log.Fatalln(err)
-		} else if uploader == nil { // pr check exit early
+		} else if uploader == nil { // return only nil, nil on exit early
 			log.Println("Relevant attributes have not changed. Exiting early.")
 			os.Exit(0)
 		}
