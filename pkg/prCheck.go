@@ -27,7 +27,7 @@ type Target struct {
 }
 
 // query previous graphql bundle and latest bundle then compare bundles for relevant changes
-// return true if gitlabSyncs of both bundles are equal
+// return true if gitlabSyncs and promotion targets of git partition sync for both bundles are same
 func EarlyExit(ctx context.Context,
 	gqlUrl,
 	gqlFile,
