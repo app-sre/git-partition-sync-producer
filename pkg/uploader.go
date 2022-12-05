@@ -7,8 +7,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os/exec"
-	"reflect"
-	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -73,21 +71,8 @@ func NewUploader(
 	gqlFile,
 	gqlUsername,
 	gqlPassword,
-	prevBundleSha,
 	pubKey,
 	workdir string) (*Uploader, error) {
-
-	// indicates PR check run
-	if len(prevBundleSha) > 0 {
-		// determine if exit early can occur
-		unchanged, err := detectUnchanged(ctx, gqlURL, gqlFile, gqlUsername, gqlPassword, prevBundleSha)
-		if err != nil {
-			return nil, err
-		}
-		if unchanged {
-			return nil, nil
-		}
-	}
 
 	cfg, err := getConfig(ctx, gqlURL, gqlFile, gqlUsername, gqlPassword)
 	if err != nil {
@@ -197,38 +182,6 @@ type DecodedKey struct {
 	ProjectName string `json:"project_name"`
 	CommitSHA   string `json:"commit_sha"`
 	Branch      string `json:"branch"`
-}
-
-// query previous graphql bundle and latest bundle then compare bundles for relevant changes
-// return true if relevant attributes of both bundles are equal
-// this is utilized to support early exit in PR checks
-func detectUnchanged(ctx context.Context, gqlUrl, gqlFile, gqlUsername, gqlPassowrd, prevBundleSha string) (bool, error) {
-	// replace `graphql` portion of path with specific sha to query
-	slicedUrl := strings.Split(gqlUrl, "/")
-	gqlBaseUrl := strings.Join(slicedUrl[:len(slicedUrl)-1], "/")
-	gqlShaUrl := fmt.Sprintf("%s/graphqlsha/%s", gqlBaseUrl, prevBundleSha)
-
-	// query graphql server at both prev and curr bundle
-	prevCfg, err := getConfig(ctx, gqlShaUrl, gqlFile, gqlUsername, gqlPassowrd)
-	if err != nil {
-		return false, err
-	}
-	currCfg, err := getConfig(ctx, gqlUrl, gqlFile, gqlUsername, gqlPassowrd)
-	if err != nil {
-		return false, err
-	}
-
-	// convert cfgs to maps for comparison
-	prevCfgMap := make(map[string]*SyncConfig)
-	for _, sc := range prevCfg {
-		prevCfgMap[fmt.Sprintf("%s/%s", sc.Source.ProjectName, sc.Source.Group)] = sc
-	}
-	currCfgMap := make(map[string]*SyncConfig)
-	for _, sc := range currCfg {
-		currCfgMap[fmt.Sprintf("%s/%s", sc.Source.ProjectName, sc.Source.Group)] = sc
-	}
-
-	return reflect.DeepEqual(prevCfgMap, currCfgMap), nil
 }
 
 // query graphql and convert result into objects for reconcile

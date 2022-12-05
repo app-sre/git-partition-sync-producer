@@ -24,6 +24,7 @@ func main() {
 
 	// define vars to look for and any defaults
 	envVars, err := getEnvVars(map[string]string{
+<<<<<<< HEAD
 		"AWS_ACCESS_KEY_ID":     "",
 		"AWS_SECRET_ACCESS_KEY": "",
 		"AWS_REGION":            "",
@@ -41,11 +42,28 @@ func main() {
 		"PUBLIC_KEY":            "",
 		"RECONCILE_SLEEP_TIME":  "5m",
 		"WORKDIR":               "/working",
+=======
+		"AWS_ACCESS_KEY_ID":         "",
+		"AWS_SECRET_ACCESS_KEY":     "",
+		"AWS_REGION":                "",
+		"AWS_S3_BUCKET":             "",
+		"GITLAB_BASE_URL":           "",
+		"GITLAB_USERNAME":           "",
+		"GITLAB_TOKEN":              "",
+		"GRAPHQL_SERVER":            "",
+		"GRAPHQL_GLSYNC_QUERY_FILE": "./queries/gitlabSync.graphql",
+		"GRAPHQL_USERNAME":          "dev",
+		"GRAPHQL_PASSWORD":          "dev",
+		"PUBLIC_KEY":                "",
+		"RECONCILE_SLEEP_TIME":      "5m",
+		"WORKDIR":                   "/working",
+>>>>>>> d56b7ec (refactor to check relevant saas file for change)
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
+<<<<<<< HEAD
 	var sleepDur time.Duration
 	if !runOnce {
 		sleepDur, err = time.ParseDuration(envVars["RECONCILE_SLEEP_TIME"])
@@ -62,6 +80,9 @@ func main() {
 
 	// processed separately from env map above because optional w/ no default val
 	envVars["PREVIOUS_BUNDLE_SHA"] = os.Getenv("PREVIOUS_BUNDLE_SHA")
+=======
+	prCheckEarlyExit(envVars)
+>>>>>>> d56b7ec (refactor to check relevant saas file for change)
 
 	// retrieve raw from graphql
 
@@ -80,18 +101,14 @@ func main() {
 			envVars["GITLAB_USERNAME"],
 			envVars["GITLAB_TOKEN"],
 			envVars["GRAPHQL_SERVER"],
-			envVars["GRAPHQL_QUERY_FILE"],
+			envVars["GRAPHQL_GLSYNC_QUERY_FILE"],
 			envVars["GRAPHQL_USERNAME"],
 			envVars["GRAPHQL_PASSWORD"],
-			envVars["PREVIOUS_BUNDLE_SHA"],
 			envVars["PUBLIC_KEY"],
 			envVars["WORKDIR"],
 		)
 		if err != nil {
 			log.Fatalln(err)
-		} else if uploader == nil { // return only nil, nil on exit early
-			log.Println("Relevant attributes have not changed. Exiting early.")
-			os.Exit(0)
 		}
 
 		err = uploader.Run(ctx, dryRun)
@@ -127,4 +144,37 @@ func getEnvVars(vars map[string]string) (map[string]string, error) {
 		}
 	}
 	return result, nil
+}
+
+func prCheckEarlyExit(envVars map[string]string) {
+	// indicates PR check when set
+	prevBundleSha := os.Getenv("PREVIOUS_BUNDLE_SHA")
+	if len(prevBundleSha) > 0 {
+		prCheckGqlFile := os.Getenv("GRAPHQL_PRCHECK_QUERY_FILE")
+		if prCheckGqlFile == "" {
+			log.Fatalln(
+				errors.New("GRAPHQL_PRCHECK_QUERY_FILE must be set when PREVIOUS_BUNDLE_SHA is set"))
+		}
+		saasName := os.Getenv("GIT_PARTITION_SAAS_NAME")
+		if saasName == "" {
+			log.Fatalln(
+				errors.New("GIT_PARTITION_SAAS_NAME must be set when PREVIOUS_BUNDLE_SHA is set"))
+		}
+		ctx := context.Background()
+		canExit, err := pkg.EarlyExit(
+			ctx,
+			envVars["GRAPHQL_SERVER"],
+			prCheckGqlFile,
+			envVars["GRAPHQL_USERNAME"],
+			envVars["GRAPHQL_PASSWORD"],
+			prevBundleSha,
+			saasName,
+		)
+		if err != nil {
+			log.Fatalln(err)
+		} else if canExit {
+			log.Println("Relevant config is the same. Exiting early")
+			os.Exit(0)
+		}
+	}
 }

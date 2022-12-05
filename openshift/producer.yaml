@@ -49,8 +49,8 @@ objects:
           env:
           - name: RECONCILE_SLEEP_TIME
             value: ${RECONCILE_SLEEP_TIME}
-          - name: GRAPHQL_QUERY_FILE
-            value: ${GRAPHQL_QUERY_FILE}
+          - name: GRAPHQL_GLSYNC_QUERY_FILE
+            value: ${GRAPHQL_GLSYNC_QUERY_FILE}
           - name: WORKDIR
             value: ${VOLUME_PATH}/${WORKDIR}
           - name: AWS_ACCESS_KEY_ID
@@ -148,8 +148,12 @@ parameters:
 - name: RUN_ONCE
   description: exits after one reconciliation attempt when true
   value: 'false'
-- name: GRAPHQL_QUERY_FILE
-  value: '/query.graphql'
+- name: GRAPHQL_GLSYNC_QUERY_FILE
+  value: '/queries/gitlabSync.graphql'
+- name: GRAPHQL_PRCHECK_QUERY_FILE
+  value: '/queries/prCheck.graphql'
+- name: GIT_PARTITION_SAAS_NAME
+  value: 'saas-git-partition-sync-producer'
 - name: VOLUME_PATH
   value: '/clones'
 - name: WORKDIR
