@@ -173,7 +173,7 @@ func prCheckEarlyExit(envVars map[string]string) {
 		if err != nil {
 			log.Fatalln(err)
 		} else if canExit {
-			log.Println("Relevant config is the same. Exiting early")
+			log.Println("Relevant config is unchanged. Exiting early")
 			os.Exit(0)
 		}
 	}
