@@ -6,10 +6,13 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
 	"github.com/app-sre/git-partition-sync-producer/pkg"
+	"github.com/app-sre/git-partition-sync-producer/pkg/utils"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
@@ -32,6 +35,8 @@ func main() {
 		"GRAPHQL_QUERY_FILE":    "/query.graphql",
 		"GRAPHQL_USERNAME":      "dev",
 		"GRAPHQL_PASSWORD":      "dev",
+		"INSTANCE_SHARD":        "fedramp",
+		"METRICS_SERVER_PORT":   "9090",
 		"PUBLIC_KEY":            "",
 		"RECONCILE_SLEEP_TIME":  "5m",
 		"WORKDIR":               "/working",
@@ -40,16 +45,27 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	// retrieve raw from graphql
+	var sleepDur time.Duration
+	if !runOnce {
+		sleepDur, err = time.ParseDuration(envVars["RECONCILE_SLEEP_TIME"])
+		if err != nil {
+			log.Fatalln(err)
+		}
 
-	sleepDur, err := time.ParseDuration(envVars["RECONCILE_SLEEP_TIME"])
-	if err != nil {
-		log.Fatalln(err)
+		// configure prometheus metrics handler
+		http.Handle("/metrics", promhttp.Handler())
+		go func() {
+			http.ListenAndServe(fmt.Sprintf(":%s", envVars["METRICS_SERVER_PORT"]), nil)
+		}()
 	}
 
-	for {
-		ctx := context.Background()
+	// retrieve raw from graphql
 
+	for {
+		status := 0
+		start := time.Now()
+
+		ctx := context.Background()
 		uploader, err := pkg.NewUploader(
 			ctx,
 			envVars["AWS_ACCESS_KEY_ID"],
@@ -73,11 +89,13 @@ func main() {
 		err = uploader.Run(ctx, dryRun)
 		if err != nil {
 			log.Println(err)
+			status = 1
 		}
 
 		if runOnce {
 			return
 		} else {
+			utils.RecordMetrics(envVars["INSTANCE_SHARD"], status, time.Since(start))
 			time.Sleep(sleepDur)
 		}
 	}
