@@ -20,7 +20,7 @@ This works in tandem with [gitlab-sync-s3-pull](https://github.com/app-sre/git-p
 * PUBLIC_KEY - value of x25519 format public key. See [age encryption](https://github.com/FiloSottile/age#readme)
 
 ### Optional
-* GRAPHQL_QUERY_FILE - absolute path to graphql query file. defaults to `/query.graphql`
+* GRAPHQL_GLSYNC_QUERY_FILE - path to graphql query file. defaults to `./queries/gitlabSync.graphql`
 * GRAPHQL_USERNAME
 * GRAPHQL_PASSWORD
 * PREVIOUS_BUNDLE_SHA - utilized for pr check exit early support
