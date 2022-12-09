@@ -11,6 +11,7 @@ objects:
     annotations:
       ignore-check.kube-linter.io/minimum-three-replicas: "git-partition-sync-producer design does not adequately account for multiple replicas"
       ignore-check.kube-linter.io/no-readiness-probe: "git-partition-sync-producer does not receive traffic"
+      ignore-check.kube-linter.io/no-liveness-probe: "git-partition-sync-producer is monitored for being stuck"
     name: git-partition-sync-producer
   spec:
     replicas: ${{REPLICAS}}
@@ -26,6 +27,7 @@ objects:
       metadata:
         labels:
           app: git-partition-sync-producer
+          component: qontract-reconcile
       spec:
         serviceAccountName: git-partition-sync-producer
         initContainers:
