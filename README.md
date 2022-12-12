@@ -21,8 +21,11 @@ This works in tandem with [gitlab-sync-s3-pull](https://github.com/app-sre/git-p
 
 ### Optional
 * GRAPHQL_GLSYNC_QUERY_FILE - path to graphql query file. defaults to `./queries/gitlabSync.graphql`
+* GRAPHQL_PRCHECK_QUERY_FILE - path to graphql query file utilized within PR checks. defaults to `/queries/prCheck.graphql`
 * GRAPHQL_USERNAME
 * GRAPHQL_PASSWORD
+* INSTANCE_SHARD - value for `shard_id` label within prometheus metrics. defaults to `fedramp`
+* METRICS_SERVER_PORT - port for prometheus server to utilize. defaults to `9090`
 * PREVIOUS_BUNDLE_SHA - utilized for pr check exit early support
 * RECONCILE_SLEEP_TIME - time between runs. defaults to 5 minutes (5m)
 * WORKDIR - local directory where io operations will be performed
