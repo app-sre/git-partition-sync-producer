@@ -24,25 +24,6 @@ func main() {
 
 	// define vars to look for and any defaults
 	envVars, err := getEnvVars(map[string]string{
-<<<<<<< HEAD
-		"AWS_ACCESS_KEY_ID":     "",
-		"AWS_SECRET_ACCESS_KEY": "",
-		"AWS_REGION":            "",
-		"AWS_S3_BUCKET":         "",
-		"GITLAB_BASE_URL":       "",
-		"GITLAB_USERNAME":       "",
-		"GITLAB_TOKEN":          "",
-		"GRAPHQL_SERVER":        "",
-		"GRAPHQL_QUERY_FILE":    "/query.graphql",
-		"GRAPHQL_USERNAME":      "dev",
-		"GRAPHQL_PASSWORD":      "dev",
-		"INSTANCE_SHARD":        "fedramp",
-		"METRICS_SERVER_PORT":   "9090",
-		"MASTER_BUNDLE_SHA256":  "unused",
-		"PUBLIC_KEY":            "",
-		"RECONCILE_SLEEP_TIME":  "5m",
-		"WORKDIR":               "/working",
-=======
 		"AWS_ACCESS_KEY_ID":         "",
 		"AWS_SECRET_ACCESS_KEY":     "",
 		"AWS_REGION":                "",
@@ -54,16 +35,17 @@ func main() {
 		"GRAPHQL_GLSYNC_QUERY_FILE": "./queries/gitlabSync.graphql",
 		"GRAPHQL_USERNAME":          "dev",
 		"GRAPHQL_PASSWORD":          "dev",
+		"INSTANCE_SHARD":            "fedramp",
+		"METRICS_SERVER_PORT":       "9090",
+		"MASTER_BUNDLE_SHA256":      "unused",
 		"PUBLIC_KEY":                "",
 		"RECONCILE_SLEEP_TIME":      "5m",
 		"WORKDIR":                   "/working",
->>>>>>> d56b7ec (refactor to check relevant saas file for change)
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-<<<<<<< HEAD
 	var sleepDur time.Duration
 	if !runOnce {
 		sleepDur, err = time.ParseDuration(envVars["RECONCILE_SLEEP_TIME"])
@@ -78,13 +60,7 @@ func main() {
 		}()
 	}
 
-	// processed separately from env map above because optional w/ no default val
-	envVars["PREVIOUS_BUNDLE_SHA"] = os.Getenv("PREVIOUS_BUNDLE_SHA")
-=======
 	prCheckEarlyExit(envVars)
->>>>>>> d56b7ec (refactor to check relevant saas file for change)
-
-	// retrieve raw from graphql
 
 	for {
 		status := 0
@@ -173,7 +149,7 @@ func prCheckEarlyExit(envVars map[string]string) {
 		if err != nil {
 			log.Fatalln(err)
 		} else if canExit {
-			log.Println("Relevant config is unchanged. Exiting early")
+			log.Println("Relevant config is the same. Exiting early")
 			os.Exit(0)
 		}
 	}
