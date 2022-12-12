@@ -127,13 +127,11 @@ func prCheckEarlyExit(envVars map[string]string) {
 	if len(prevBundleSha) > 0 {
 		prCheckGqlFile := os.Getenv("GRAPHQL_PRCHECK_QUERY_FILE")
 		if prCheckGqlFile == "" {
-			log.Fatalln(
-				errors.New("GRAPHQL_PRCHECK_QUERY_FILE must be set when PREVIOUS_BUNDLE_SHA is set"))
+			prCheckGqlFile = "/queries/prCheck.graphql"
 		}
 		saasName := os.Getenv("GIT_PARTITION_SAAS_NAME")
 		if saasName == "" {
-			log.Fatalln(
-				errors.New("GIT_PARTITION_SAAS_NAME must be set when PREVIOUS_BUNDLE_SHA is set"))
+			saasName = "saas-git-partition-sync-producer"
 		}
 		ctx := context.Background()
 		canExit, err := pkg.EarlyExit(
