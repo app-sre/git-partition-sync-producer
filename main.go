@@ -37,7 +37,6 @@ func main() {
 		"GRAPHQL_PASSWORD":          "dev",
 		"INSTANCE_SHARD":            "fedramp",
 		"METRICS_SERVER_PORT":       "9090",
-		"MASTER_BUNDLE_SHA256":      "unused",
 		"PUBLIC_KEY":                "",
 		"RECONCILE_SLEEP_TIME":      "5m",
 		"WORKDIR":                   "/working",
