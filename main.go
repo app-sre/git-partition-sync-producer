@@ -88,8 +88,12 @@ func main() {
 
 		err = uploader.Run(ctx, dryRun)
 		if err != nil {
-			log.Println(err)
-			status = 1
+			if runOnce {
+				log.Fatalln(err)
+			} else {
+				log.Println(err)
+				status = 1
+			}
 		}
 
 		if runOnce {
