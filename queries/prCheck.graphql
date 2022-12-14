@@ -1,0 +1,32 @@
+{
+    saas_files: saas_files_v2 {
+        name
+        resourceTemplates {
+            targets {
+                ref
+            }
+        }
+    },
+    apps_v1: apps_v1 {
+        codeComponents {
+            gitlabSync {
+                ... on CodeComponentGitlabSync_v1 {
+                    sourceProject {
+                        ... on CodeComponentGitlabSyncProject_v1 {
+                            name
+                            group
+                            branch
+                        }
+                    }
+                    destinationProject {
+                        ... on CodeComponentGitlabSyncProject_v1 {
+                            name
+                            group
+                            branch
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

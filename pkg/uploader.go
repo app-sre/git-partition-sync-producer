@@ -184,8 +184,39 @@ type DecodedKey struct {
 	Branch      string `json:"branch"`
 }
 
-// performs graphql query and processes raw result
+// query graphql and convert result into objects for reconcile
 func getConfig(ctx context.Context, gqlUrl, gqlFile, gqlUsername, gqlPassowrd string) ([]*SyncConfig, error) {
+	rawCfg, err := getGraphqlRaw(ctx, gqlUrl, gqlFile, gqlUsername, gqlPassowrd)
+	if err != nil {
+		return nil, err
+	}
+
+	appBytes, err := yaml.Marshal(rawCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	var config Apps
+	err = yaml.Unmarshal(appBytes, &config)
+	if err != nil {
+		return nil, err
+	}
+
+	syncs := []*SyncConfig{}
+	for _, cc := range config.CodeComponentGitSyncs {
+		for _, gs := range cc.GitlabSyncs {
+			if gs.GitSync != nil {
+				syncs = append(syncs, gs.GitSync)
+			}
+		}
+	}
+
+	return syncs, nil
+}
+
+// create graphql query request and perform query with retry logic
+// return is unaltered query response
+func getGraphqlRaw(ctx context.Context, gqlUrl, gqlFile, gqlUsername, gqlPassowrd string) (map[string]interface{}, error) {
 	client := graphql.NewClient(gqlUrl)
 
 	query, err := ioutil.ReadFile(gqlFile)
@@ -224,28 +255,7 @@ func getConfig(ctx context.Context, gqlUrl, gqlFile, gqlUsername, gqlPassowrd st
 	if err != nil {
 		return nil, err
 	}
-
-	appBytes, err := yaml.Marshal(rawCfg)
-	if err != nil {
-		return nil, err
-	}
-
-	var config Apps
-	err = yaml.Unmarshal(appBytes, &config)
-	if err != nil {
-		return nil, err
-	}
-
-	syncs := []*SyncConfig{}
-	for _, cc := range config.CodeComponentGitSyncs {
-		for _, gs := range cc.GitlabSyncs {
-			if gs.GitSync != nil {
-				syncs = append(syncs, gs.GitSync)
-			}
-		}
-	}
-
-	return syncs, nil
+	return rawCfg, nil
 }
 
 // iterates through desired Syncs (defined within config file)
