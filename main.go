@@ -134,7 +134,7 @@ func prCheckEarlyExit(envVars map[string]string) {
 			saasName = "saas-git-partition-sync-producer"
 		}
 		ctx := context.Background()
-		canExit, err := pkg.EarlyExit(
+		canExit, err := utils.EarlyExit(
 			ctx,
 			envVars["GRAPHQL_SERVER"],
 			prCheckGqlFile,

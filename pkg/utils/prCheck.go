@@ -1,4 +1,4 @@
-package pkg
+package utils
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/app-sre/git-partition-sync-producer/pkg"
 	"gopkg.in/yaml.v3"
 )
 
@@ -42,11 +43,11 @@ func EarlyExit(ctx context.Context,
 	gqlShaUrl := fmt.Sprintf("%s/graphqlsha/%s", gqlBaseUrl, prevBundleSha)
 
 	// query graphql server at both prev and curr bundle
-	prevGqlRaw, err := getGraphqlRaw(ctx, gqlShaUrl, gqlFile, gqlUsername, gqlPassowrd)
+	prevGqlRaw, err := pkg.GetGraphqlRaw(ctx, gqlShaUrl, gqlFile, gqlUsername, gqlPassowrd)
 	if err != nil {
 		return false, err
 	}
-	currGqlRaw, err := getGraphqlRaw(ctx, gqlUrl, gqlFile, gqlUsername, gqlPassowrd)
+	currGqlRaw, err := pkg.GetGraphqlRaw(ctx, gqlUrl, gqlFile, gqlUsername, gqlPassowrd)
 	if err != nil {
 		return false, err
 	}
@@ -79,7 +80,7 @@ func isSyncSame(prevGqlRaw, currGqlRaw map[string]interface{}) (bool, error) {
 		"apps_v1": currGqlRaw["apps_v1"],
 	})
 
-	var prevSyncCfg, currSyncCfg Apps
+	var prevSyncCfg, currSyncCfg pkg.Apps
 	err = yaml.Unmarshal(prevBytes, &prevSyncCfg)
 	if err != nil {
 		return false, err
@@ -89,7 +90,7 @@ func isSyncSame(prevGqlRaw, currGqlRaw map[string]interface{}) (bool, error) {
 		return false, err
 	}
 
-	prevCfgMap := make(map[string]*SyncConfig)
+	prevCfgMap := make(map[string]*pkg.SyncConfig)
 	for _, cc := range prevSyncCfg.CodeComponentGitSyncs {
 		for _, gs := range cc.GitlabSyncs {
 			if gs.GitSync != nil {
@@ -97,7 +98,7 @@ func isSyncSame(prevGqlRaw, currGqlRaw map[string]interface{}) (bool, error) {
 			}
 		}
 	}
-	currCfgMap := make(map[string]*SyncConfig)
+	currCfgMap := make(map[string]*pkg.SyncConfig)
 	for _, cc := range currSyncCfg.CodeComponentGitSyncs {
 		for _, gs := range cc.GitlabSyncs {
 			if gs.GitSync != nil {
