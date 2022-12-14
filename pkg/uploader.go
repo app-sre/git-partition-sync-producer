@@ -186,7 +186,7 @@ type DecodedKey struct {
 
 // query graphql and convert result into objects for reconcile
 func getConfig(ctx context.Context, gqlUrl, gqlFile, gqlUsername, gqlPassowrd string) ([]*SyncConfig, error) {
-	rawCfg, err := getGraphqlRaw(ctx, gqlUrl, gqlFile, gqlUsername, gqlPassowrd)
+	rawCfg, err := GetGraphqlRaw(ctx, gqlUrl, gqlFile, gqlUsername, gqlPassowrd)
 	if err != nil {
 		return nil, err
 	}
@@ -216,7 +216,7 @@ func getConfig(ctx context.Context, gqlUrl, gqlFile, gqlUsername, gqlPassowrd st
 
 // create graphql query request and perform query with retry logic
 // return is unaltered query response
-func getGraphqlRaw(ctx context.Context, gqlUrl, gqlFile, gqlUsername, gqlPassowrd string) (map[string]interface{}, error) {
+func GetGraphqlRaw(ctx context.Context, gqlUrl, gqlFile, gqlUsername, gqlPassowrd string) (map[string]interface{}, error) {
 	client := graphql.NewClient(gqlUrl)
 
 	query, err := ioutil.ReadFile(gqlFile)

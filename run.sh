@@ -15,4 +15,4 @@ podman run -t --net=host \
     -e PUBLIC_KEY=$PUBLIC_KEY \
     -e RECONCILE_SLEEP_TIME=$RECONCILE_SLEEP_TIME \
     -e WORKDIR=$WORKDIR \
-    quay.io/app-sre/git-partition-sync-producer:latest -dry-run=true -run-once=false
+    quay.io/app-sre/git-partition-sync-producer:latest -dry-run=true -run-once=true
