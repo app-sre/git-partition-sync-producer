@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"archive/tar"
+	"compress/gzip"
 	"fmt"
 	"io"
 	"os"
@@ -30,7 +31,10 @@ func (u *Uploader) tarRepos(toUpdate []*SyncConfig) error {
 		}
 		defer f.Close()
 
-		tw := tar.NewWriter(f)
+		gzw := gzip.NewWriter(f)
+		defer gzw.Close()
+
+		tw := tar.NewWriter(gzw)
 		defer tw.Close()
 
 		// credit: https://medium.com/@skdomino/taring-untaring-files-in-go-6b07cf56bc07
