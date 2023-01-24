@@ -113,10 +113,11 @@ func (u *Uploader) uploadLatest(ctx context.Context, toUpdate []*SyncConfig, glC
 			sourcePid := fmt.Sprintf("%s/%s", gsync.Source.Group, gsync.Source.ProjectName)
 
 			jsonStruct := &DecodedKey{
-				Group:       gsync.Destination.Group,
-				ProjectName: gsync.Destination.ProjectName,
-				CommitSHA:   glCommits[sourcePid],
-				Branch:      gsync.Destination.Branch,
+				Group:        gsync.Destination.Group,
+				ProjectName:  gsync.Destination.ProjectName,
+				CommitSHA:    glCommits[sourcePid],
+				LocalBranch:  gsync.Source.Branch,
+				RemoteBranch: gsync.Destination.Branch,
 			}
 
 			jsonBytes, err := json.Marshal(jsonStruct)
