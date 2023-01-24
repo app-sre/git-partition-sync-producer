@@ -178,10 +178,11 @@ func (u *Uploader) Run(ctx context.Context, dryRun bool) error {
 }
 
 type DecodedKey struct {
-	Group       string `json:"group"`
-	ProjectName string `json:"project_name"`
-	CommitSHA   string `json:"commit_sha"`
-	Branch      string `json:"branch"`
+	Group        string `json:"group"`
+	ProjectName  string `json:"project_name"`
+	CommitSHA    string `json:"commit_sha"`
+	LocalBranch  string `json:"local_branch"`
+	RemoteBranch string `json:"remote_branch"`
 }
 
 // query graphql and convert result into objects for reconcile
