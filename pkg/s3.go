@@ -94,7 +94,7 @@ func (u *Uploader) removeOutdated(ctx context.Context, toDeleteKeys []*string) e
 
 // cocurrently uploads latest encrypted tars to target s3 bucket
 func (u *Uploader) uploadLatest(ctx context.Context, toUpdate []*SyncConfig, glCommits pidToCommit) error {
-	ctxTimeout, cancel := context.WithTimeout(ctx, time.Second*20)
+	ctxTimeout, cancel := context.WithTimeout(ctx, time.Second*60)
 	defer cancel()
 
 	wg := &sync.WaitGroup{}
