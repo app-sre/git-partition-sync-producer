@@ -49,7 +49,7 @@ func (u *Uploader) cloneRepos(toUpdate []*SyncConfig) error {
 		cmd.Stderr = &stderr
 		err = cmd.Run()
 		if err != nil {
-			return errors.New(strings.ReplaceAll(stderr.String(), authURL, "[REDACTED]"))
+			return errors.New(strings.ReplaceAll(stderr.String(), u.glToken, "[REDACTED]"))
 		}
 
 		gs.repoPath = fmt.Sprintf("%s/%s/%s", u.workdir, CLONE_DIRECTORY, gs.Source.ProjectName)
