@@ -1,9 +1,12 @@
 package pkg
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
 	"net/url"
 	"os/exec"
+	"strings"
 )
 
 // keys are gitlab PID (gitlab_group/project_name)
@@ -42,9 +45,11 @@ func (u *Uploader) cloneRepos(toUpdate []*SyncConfig) error {
 		args := []string{"-c", fmt.Sprintf("git clone %s", authURL)}
 		cmd := exec.Command("/bin/sh", args...)
 		cmd.Dir = fmt.Sprintf("%s/%s", u.workdir, CLONE_DIRECTORY)
+		var stderr bytes.Buffer
+		cmd.Stderr = &stderr
 		err = cmd.Run()
 		if err != nil {
-			return err
+			return errors.New(strings.ReplaceAll(stderr.String(), authURL, "[REDACTED]"))
 		}
 
 		gs.repoPath = fmt.Sprintf("%s/%s/%s", u.workdir, CLONE_DIRECTORY, gs.Source.ProjectName)
