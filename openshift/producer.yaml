@@ -159,9 +159,9 @@ parameters:
 - name: WORKDIR
   value: 'working'
 - name: MEMORY_REQUESTS
-  value: 200Mi
+  value: 1000Mi
 - name: MEMORY_LIMIT
-  value: 200Mi
+  value: 1000Mi
 - name: CPU_REQUESTS
   value: 100m
 - name: CPU_LIMIT
